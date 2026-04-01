@@ -1,0 +1,7 @@
+[Windeco]
+AnimationsDuration=104
+BackgroundOpacity=80
+ButtonStyle=macSierra
+MatchColorForTitleBar=true
+OpaqueTitleBar=false
+UnisonHovering=false
