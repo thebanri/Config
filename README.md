@@ -1,5 +1,16 @@
 ﻿##  KDE Konfig Kurulum Rehberi
 
+## Otomatik
+
+Bu kodu çalıştırın:
+
+`cd Config`
+`chmod +x install.sh`
+`./install.sh`
+
+
+## Manual
+
 KDE konfigürasyon kurulum rehberine hoş geldiniz. Burdaki dosyalar bana ait olan KDE masaüstü ortamının özelleştirilme dosyalarıdır. 
 
 ###  Kurulum: 
