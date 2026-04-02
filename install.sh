@@ -47,8 +47,32 @@ echo -e "${NC}"
 [[ -d "$HOME" ]] || die "Cannot determine home directory."
 command -v plasmashell &>/dev/null || warn "plasmashell not found – are you running KDE Plasma?"
 
+# ── Detect package manager ────────────────────────────────────────────────────
+detect_pkg_manager() {
+    if command -v pacman &>/dev/null; then   echo "pacman"
+    elif command -v apt-get &>/dev/null; then echo "apt"
+    elif command -v dnf &>/dev/null; then    echo "dnf"
+    elif command -v zypper &>/dev/null; then echo "zypper"
+    else                                     echo "unknown"
+    fi
+}
+
+# ── Try to install a package with the detected manager (requires sudo) ────────
+try_install_pkg() {
+    local pkg_pacman="$1" pkg_apt="$2" pkg_dnf="$3" pkg_zypper="$4"
+    local mgr
+    mgr="$(detect_pkg_manager)"
+    case "$mgr" in
+        pacman)  sudo pacman -S --noconfirm "$pkg_pacman" 2>/dev/null ;;
+        apt)     sudo apt-get install -y "$pkg_apt"     2>/dev/null ;;
+        dnf)     sudo dnf install -y "$pkg_dnf"         2>/dev/null ;;
+        zypper)  sudo zypper install -y "$pkg_zypper"   2>/dev/null ;;
+        *)       return 1 ;;
+    esac
+}
+
 # ── Step 1: kwinrc ────────────────────────────────────────────────────────────
-echo -e "\n${BOLD}Step 1/5 – Installing kwinrc${NC}"
+echo -e "\n${BOLD}Step 1/7 – Installing kwinrc${NC}"
 KWINRC_SRC="${SCRIPT_DIR}/kwinrc"
 KWINRC_DST="${HOME}/.config/kwinrc"
 
@@ -59,7 +83,7 @@ cp "$KWINRC_SRC" "$KWINRC_DST"
 success "kwinrc copied to ~/.config/kwinrc"
 
 # ── Step 2: Color scheme ──────────────────────────────────────────────────────
-echo -e "\n${BOLD}Step 2/5 – Installing Sweet color scheme${NC}"
+echo -e "\n${BOLD}Step 2/7 – Installing Sweet color scheme${NC}"
 COLOR_SRC="${SCRIPT_DIR}/Colors/Sweet.colors"
 COLOR_DST_DIR="${HOME}/.local/share/color-schemes"
 COLOR_DST="${COLOR_DST_DIR}/Sweet.colors"
@@ -72,7 +96,7 @@ cp "$COLOR_SRC" "$COLOR_DST"
 success "Sweet color scheme installed → ${COLOR_DST}"
 
 # ── Step 3: Kvantum application theme ────────────────────────────────────────
-echo -e "\n${BOLD}Step 3/5 – Installing Kvantum theme${NC}"
+echo -e "\n${BOLD}Step 3/7 – Installing Kvantum theme${NC}"
 APP_DIR="${SCRIPT_DIR}/Application"
 KVANTUM_ARCHIVE="$(find "$APP_DIR" -maxdepth 1 -name '*.tar.xz' 2>/dev/null | head -n1)"
 KVANTUM_DIR="${HOME}/.config/Kvantum"
@@ -100,8 +124,57 @@ else
     fi
 fi
 
-# ── Step 4: Window decoration config ─────────────────────────────────────────
-echo -e "\n${BOLD}Step 4/5 – Installing Sierra Breeze window decoration config${NC}"
+# ── Step 4: Sierra Breeze Enhanced window decoration ─────────────────────────
+echo -e "\n${BOLD}Step 4/7 – Installing Sierra Breeze Enhanced window decoration${NC}"
+SIERRA_LIB_DIRS=( "/usr/lib/qt/plugins/org.kde.kdecoration2"
+                  "/usr/lib64/qt/plugins/org.kde.kdecoration2"
+                  "/usr/lib/x86_64-linux-gnu/qt6/plugins/org.kde.kdecoration2"
+                  "${HOME}/.local/lib64/qt6/plugins/org.kde.kdecoration2"
+                  "${HOME}/.local/lib/qt6/plugins/org.kde.kdecoration2" )
+sierra_installed() {
+    for d in "${SIERRA_LIB_DIRS[@]}"; do
+        [[ -f "${d}/sierrabreezeenhanced.so" ]] && return 0
+    done
+    return 1
+}
+
+if sierra_installed; then
+    success "Sierra Breeze Enhanced is already installed – skipping."
+else
+    info "Trying to install Sierra Breeze Enhanced via package manager…"
+    # Arch: sierrabreezeenhanced (AUR – needs an AUR helper), Debian/Ubuntu: no official pkg,
+    # openSUSE: might be in KDE repos. We try common package names first.
+    if try_install_pkg "sierrabreezeenhanced" "sierrabreezeenhanced" "kwin-decoration-sierra-breeze-enhanced" "sierrabreezeenhanced" 2>/dev/null; then
+        success "Sierra Breeze Enhanced installed via package manager."
+    else
+        info "Package manager install not available – building from source…"
+        BUILD_DEPS_OK=true
+        for dep in git cmake make g++; do
+            command -v "$dep" &>/dev/null || { warn "Build dependency missing: $dep"; BUILD_DEPS_OK=false; }
+        done
+
+        if [[ "$BUILD_DEPS_OK" == true ]]; then
+            SIERRA_BUILD_DIR="$(mktemp -d /tmp/sierrabreeze-build.XXXXXX)"
+            (
+                set -e
+                git clone --depth=1 https://github.com/kupiqu/SierraBreezeEnhanced.git "$SIERRA_BUILD_DIR/src"
+                mkdir -p "$SIERRA_BUILD_DIR/build"
+                cd "$SIERRA_BUILD_DIR/build"
+                cmake ../src -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release
+                make -j"$(nproc)"
+                sudo make install
+            ) && success "Sierra Breeze Enhanced built and installed from source." \
+              || warn "Build failed. Install Sierra Breeze Enhanced manually: https://github.com/kupiqu/SierraBreezeEnhanced"
+            rm -rf "$SIERRA_BUILD_DIR"
+        else
+            warn "Cannot build Sierra Breeze Enhanced – missing build tools. Install it manually:"
+            warn "  https://github.com/kupiqu/SierraBreezeEnhanced"
+        fi
+    fi
+fi
+
+# ── Step 5: Window decoration config ─────────────────────────────────────────
+echo -e "\n${BOLD}Step 5/7 – Installing Sierra Breeze window decoration config${NC}"
 WD_DIR="${SCRIPT_DIR}/Window Decorations"
 WD_RC_SRC="$(find "$WD_DIR" -maxdepth 1 -type f ! -name '*.png' 2>/dev/null | head -n1)"
 WD_RC_DST=""
@@ -115,8 +188,64 @@ else
     success "Window decoration config copied → ${WD_RC_DST}"
 fi
 
-# ── Step 5: Panel Colorizer preset ───────────────────────────────────────────
-echo -e "\n${BOLD}Step 5/5 – Installing Panel Colorizer preset${NC}"
+# ── Step 6: Download and install Panel Colorizer plasmoid ────────────────────
+echo -e "\n${BOLD}Step 6/7 – Installing Panel Colorizer plasmoid${NC}"
+PANEL_PKG_ID="luisbocanegra.panel.colorizer"
+
+panel_colorizer_installed() {
+    if command -v kpackagetool6 &>/dev/null; then
+        kpackagetool6 --list --type Plasma/Applet 2>/dev/null | grep -q "$PANEL_PKG_ID"
+    elif command -v kpackagetool5 &>/dev/null; then
+        kpackagetool5 --list --type Plasma/Applet 2>/dev/null | grep -q "$PANEL_PKG_ID"
+    else
+        return 1
+    fi
+}
+
+if panel_colorizer_installed; then
+    success "Panel Colorizer is already installed – skipping."
+else
+    PLASMOID_URL=""
+    if command -v curl &>/dev/null; then
+        PLASMOID_URL="$(curl -fsSL "https://api.github.com/repos/luisbocanegra/plasma-panel-colorizer/releases/latest" 2>/dev/null \
+            | grep '"browser_download_url"' | grep '\.plasmoid"' | head -n1 | cut -d '"' -f4)" || true
+    fi
+
+    if [[ -z "$PLASMOID_URL" ]]; then
+        warn "Could not determine Panel Colorizer download URL. Install it manually from:"
+        warn "  https://github.com/luisbocanegra/plasma-panel-colorizer/releases"
+    else
+        PLASMOID_TMP="$(mktemp /tmp/panel-colorizer.XXXXXX.plasmoid)"
+        info "Downloading Panel Colorizer from GitHub…"
+        if curl -fsSL -o "$PLASMOID_TMP" "$PLASMOID_URL"; then
+            KPKG=""
+            command -v kpackagetool6 &>/dev/null && KPKG="kpackagetool6"
+            command -v kpackagetool5 &>/dev/null && [[ -z "$KPKG" ]] && KPKG="kpackagetool5"
+
+            if [[ -z "$KPKG" ]]; then
+                warn "kpackagetool6/kpackagetool5 not found – cannot install plasmoid automatically."
+                warn "  Downloaded file kept at: ${PLASMOID_TMP}"
+                warn "  Install manually with: kpackagetool6 --install ${PLASMOID_TMP}"
+            elif "$KPKG" --install "$PLASMOID_TMP" 2>/dev/null; then
+                success "Panel Colorizer installed via ${KPKG}."
+                rm -f "$PLASMOID_TMP"
+            elif "$KPKG" --upgrade "$PLASMOID_TMP" 2>/dev/null; then
+                success "Panel Colorizer upgraded via ${KPKG}."
+                rm -f "$PLASMOID_TMP"
+            else
+                warn "kpackagetool install failed. Try manually:"
+                warn "  ${KPKG} --install ${PLASMOID_TMP}"
+            fi
+        else
+            warn "Download failed. Install Panel Colorizer manually from:"
+            warn "  https://github.com/luisbocanegra/plasma-panel-colorizer/releases"
+            rm -f "$PLASMOID_TMP"
+        fi
+    fi
+fi
+
+# ── Step 7: Panel Colorizer preset ───────────────────────────────────────────
+echo -e "\n${BOLD}Step 7/7 – Installing Panel Colorizer preset${NC}"
 PANEL_SRC_DIR="${SCRIPT_DIR}/Panel_Conf"
 PANEL_DST_DIR="${HOME}/.config/panel-colorizer/presets"
 PANEL_JSON_SRC="${PANEL_SRC_DIR}/settings.json"
@@ -156,10 +285,12 @@ fi
 echo -e "\n${GREEN}${BOLD}✓ Installation complete!${NC}"
 echo ""
 echo -e "  ${BOLD}Manual steps still required:${NC}"
-echo "  • Step (original 4): Go to System Settings → Colors & Themes → Plasma Style,"
+echo "  • Plasma Style: Go to System Settings → Colors & Themes → Plasma Style,"
 echo "    click 'Get New', search for 'Sweet' and apply it."
-echo "  • Step (original 6): Go to System Settings → Colors & Themes → Icons,"
+echo "  • Icons: Go to System Settings → Colors & Themes → Icons,"
 echo "    click 'Get New' and install your preferred icon pack."
+echo "  • Panel Colorizer widget: Add the Panel Colorizer widget to your panel,"
+echo "    open its settings, and select the 'Panel_Conf' preset from the list."
 echo ""
 if [[ -d "$BACKUP_DIR" ]]; then
     echo -e "  ${BOLD}Your previous config files were backed up to:${NC}"
