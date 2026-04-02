@@ -4,9 +4,7 @@
 
 Bu kodu çalıştırın:
 
-`cd Config`
-`chmod +x install.sh`
-`./install.sh`
+`cd Config`&&`chmod +x install.sh`&&`./install.sh`
 
 
 ## Manual
