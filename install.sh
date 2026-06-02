@@ -48,6 +48,13 @@ if [ -d "$TEMP_DIR/Application" ]; then
         mkdir -p "$HOME/.config/Kvantum"
         tar -xf "$APP_FILE" -C "$HOME/.config/Kvantum"
         echo "    ✓ Kvantum dosyaları çıkarıldı."
+        
+        if command -v kvantummanager &>/dev/null; then
+            kvantummanager --set Shades-of-purple
+            echo "    ✓ Kvantum teması aktif edildi."
+        else
+            echo "    ! kvantummanager bulunamadı, temayı manuel seçmelisiniz."
+        fi
     fi
 fi
 

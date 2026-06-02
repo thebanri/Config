@@ -6,11 +6,16 @@ LatencyPolicy=Low
 TripleBuffering=true
 
 [Desktops]
+Id_1=53a91eff-601c-456e-bdad-ce72a0d24fbd
+Id_2=05c71d45-c5de-4201-a135-5d6f9642f4ef
 Number=2
 Rows=1
 
 [Effect-blur]
 NoiseStrength=14
+
+[NightColor]
+Mode=Constant
 
 [Outputs]
 AdaptiveSync=false
@@ -19,8 +24,33 @@ AdaptiveSync=false
 blurEnabled=true
 frozenappEnabled=false
 magiclampEnabled=true
+rememberwindowpositionsEnabled=false
 squashEnabled=false
 translucencyEnabled=true
+
+[Tiling][05c71d45-c5de-4201-a135-5d6f9642f4ef][]
+padding=4
+tiles={"layoutDirection":"horizontal","tiles":[{"width":0.25},{"width":0.5},{"width":0.25}]}
+
+[Tiling][05c71d45-c5de-4201-a135-5d6f9642f4ef][92f0cae2-a3e7-4596-98bb-45e31e91d4dc]
+padding=4
+tiles={"layoutDirection":"horizontal","tiles":[{"width":0.25},{"width":0.5},{"width":0.25}]}
+
+[Tiling][05c71d45-c5de-4201-a135-5d6f9642f4ef][f4549430-e9cc-421e-a978-3b6a159f245b]
+padding=4
+tiles={"layoutDirection":"horizontal","tiles":[{"width":0.25},{"width":0.5},{"width":0.25}]}
+
+[Tiling][53a91eff-601c-456e-bdad-ce72a0d24fbd][]
+padding=4
+tiles={"layoutDirection":"horizontal","tiles":[{"width":0.25},{"width":0.5},{"width":0.25}]}
+
+[Tiling][53a91eff-601c-456e-bdad-ce72a0d24fbd][92f0cae2-a3e7-4596-98bb-45e31e91d4dc]
+padding=4
+tiles={"layoutDirection":"horizontal","tiles":[{"width":0.25},{"width":0.5},{"width":0.25}]}
+
+[Tiling][53a91eff-601c-456e-bdad-ce72a0d24fbd][f4549430-e9cc-421e-a978-3b6a159f245b]
+padding=4
+tiles={"layoutDirection":"horizontal","tiles":[{"width":0.25},{"width":0.5},{"width":0.25}]}
 
 [org.kde.kdecoration2]
 ButtonsOnLeft=MBFS
