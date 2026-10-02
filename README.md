@@ -6,19 +6,29 @@ Bu kodu çalıştırın:
 
 `cd Config && chmod +x install.sh && ./install.sh`
 
-Script eksik bağımlılıkları (Kvantum, Sierra Breeze Enhanced, Panel Colorizer, UFW) tek seferde kurar, sudo şifresini en başta bir kez sorar ve üzerine yazdığı ayarları `~/.config_backup_<tarih>` klasörüne yedekler.
+Script eksik bağımlılıkları (Kvantum, Sierra Breeze Enhanced, Panel Colorizer, UFW) tek seferde kurar, NVIDIA saat ayarını systemd servisi olarak yükler, sudo şifresini en başta bir kez sorar ve üzerine yazdığı ayarları `~/.config_backup_<tarih>` klasörüne yedekler.
 
 | Komut | Ne yapar |
 |---|---|
-| `./install.sh` | Tema + UFW kurulumu |
+| `./install.sh` | Tema + UFW + NVIDIA saat ayarı |
 | `./install.sh --apps` | `install_apps.sh`'taki uygulamaları da aynı seferde kurar |
-| `./install.sh --only ufw` | Sadece seçilen adımlar (`deps kwin colors kvantum decoration panel ufw`) |
+| `./install.sh --only ufw` | Sadece seçilen adımlar (`deps kwin colors kvantum decoration panel ufw nvidia`) |
 | `./install.sh --skip panel` | Seçilen adımları atlar |
 | `./install.sh --no-restart` | Sonda KWin/Plasma'yı yeniden yüklemez |
 
 ### UFW
 
 `UFW/rules.conf` içindeki portlar açılır (KDE Connect `1714-1764`, LocalSend `53317`, TCP+UDP). UFW kapalıysa `deny incoming / allow outgoing` ile etkinleştirilir. Yeni port eklemek için dosyaya satır ekleyip `./install.sh --only ufw` çalıştırın.
+
+### NVIDIA
+
+`NVIDIA/nvidia-clocks.service`, `/etc/systemd/system/` altına kurulur ve `nvidia-persistenced` ile birlikte açılışta otomatik çalışır:
+
+- Persistence mode açık (`nvidia-smi -pm 1`)
+- Çekirdek saati 600–2100 MHz (`-lgc 600,2100`)
+- Bellek saati en az 810 MHz (`-lmc 810,7501`), böylece kart boşta P5'in altına inmez
+
+Değerler **RTX 3060** içindir; script başka kartta bu adımı atlar. Değerleri değiştirmek için servis dosyasını düzenleyip `./install.sh --only nvidia` çalıştırın. Kaldırmak için: `sudo systemctl disable --now nvidia-clocks`.
 
 
 ## Manual

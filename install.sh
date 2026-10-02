@@ -5,19 +5,19 @@ usage() {
     cat <<'EOF'
 Kullanım: ./install.sh [seçenekler]
 
-  (seçeneksiz)        Tema + UFW kurulumu (eksik bağımlılıklar otomatik kurulur)
+  (seçeneksiz)        Tema + UFW + NVIDIA saat ayarı (eksik bağımlılıklar otomatik kurulur)
   --apps              install_apps.sh'taki uygulamaları da aynı seferde kur
   --only a,b          Sadece verilen adımları çalıştır
   --skip a,b          Verilen adımları atla
   --no-restart        Sonda KWin/Plasma'yı yeniden yükleme
   -h, --help          Bu yardımı göster
 
-Adımlar: deps kwin colors kvantum decoration panel ufw
+Adımlar: deps kwin colors kvantum decoration panel ufw nvidia
 Örnek:   ./install.sh --only ufw      ./install.sh --apps --skip panel
 EOF
 }
 
-ALL_STEPS=(deps kwin colors kvantum decoration panel ufw)
+ALL_STEPS=(deps kwin colors kvantum decoration panel ufw nvidia)
 ONLY="" SKIP="" WITH_APPS=0 RESTART=1
 while (( $# )); do
     case $1 in
@@ -69,7 +69,7 @@ else
 fi
 
 # sudo şifresini en başta bir kez sor, kurulum boyunca canlı tut
-if wanted deps || wanted ufw || (( WITH_APPS )); then
+if wanted deps || wanted ufw || wanted nvidia || (( WITH_APPS )); then
     sudo -v
     while true; do sudo -n true; sleep 50; done 2>/dev/null &
     SUDO_PID=$!
@@ -190,6 +190,26 @@ do_ufw() {
     done < "$SRC/UFW/rules.conf"
     sudo ufw reload >/dev/null
     ok "UFW yeniden yüklendi."
+}
+
+do_nvidia() {
+    step "NVIDIA saat ayarı kuruluyor..."
+    if ! command -v nvidia-smi &>/dev/null; then
+        warn "nvidia-smi bulunamadı, atlanıyor."
+        return
+    fi
+    # Servisteki saat değerleri RTX 3060'a göre; başka kartta yanlış olabilir
+    local gpu
+    gpu=$(nvidia-smi --query-gpu=name --format=csv,noheader | head -n1)
+    if [[ $gpu != *"RTX 3060"* ]]; then
+        warn "Kart '$gpu', ayarlar RTX 3060 için. NVIDIA/nvidia-clocks.service'i düzenleyip tekrar çalıştır."
+        return
+    fi
+    sudo install -m 644 "$SRC/NVIDIA/nvidia-clocks.service" /etc/systemd/system/nvidia-clocks.service
+    sudo systemctl daemon-reload
+    sudo systemctl enable nvidia-persistenced.service nvidia-clocks.service &>/dev/null
+    sudo systemctl restart nvidia-persistenced.service nvidia-clocks.service
+    ok "Çekirdek 600-2100 MHz, bellek min 810 MHz (P5 altına inmez), persistence açık."
 }
 
 do_restart() {
