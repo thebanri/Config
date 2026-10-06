@@ -10,9 +10,9 @@ Script eksik bağımlılıkları (Kvantum, Sierra Breeze Enhanced, Panel Coloriz
 
 | Komut | Ne yapar |
 |---|---|
-| `./install.sh` | Tema + dotfile'lar + UFW + NVIDIA saat ayarı + varsayılan terminal |
+| `./install.sh` | Tema + dotfile'lar + scripts + UFW + NVIDIA saat ayarı + varsayılan terminal |
 | `./install.sh --apps` | `install_apps.sh`'taki uygulamaları da aynı seferde kurar |
-| `./install.sh --only ufw` | Sadece seçilen adımlar (`deps kwin colors kvantum decoration panel dotfiles ufw nvidia terminal`) |
+| `./install.sh --only ufw` | Sadece seçilen adımlar (`deps kwin colors kvantum decoration panel dotfiles scripts ufw nvidia terminal`) |
 | `./install.sh --skip panel` | Seçilen adımları atlar |
 | `./install.sh --no-restart` | Sonda KWin/Plasma'yı yeniden yüklemez |
 
@@ -38,6 +38,10 @@ Script eksik bağımlılıkları (Kvantum, Sierra Breeze Enhanced, Panel Coloriz
 Sistemdeki değişiklikleri repoya almak için `./sync_dotfiles.sh` çalıştırıp `git diff` ile kontrol edin. Yeni bir dosyayı takibe almak için önce `Dotfiles/` altına aynı yolla kopyalayın.
 
 > Repo herkese açık: `gh/hosts.yml`, `.aws/`, tarayıcı profilleri, `kwalletrc`, `kdeconnect/` gibi token/anahtar içeren dosyaları **eklemeyin**.
+
+### Scripts
+
+[thebanri/scripts](https://github.com/thebanri/scripts) reposu `~/scripts`'e klonlanır (zaten varsa `git pull` yapılır). `config.fish` bu klasörü `fish_function_path`'e eklediği için içindeki `last-pkgs`, `cache`, `open`, `win-next` gibi komutlar doğrudan kullanılabilir. Komutların listesi o reponun README'sinde.
 
 ### Görev çubuğu önizlemeleri kaybolursa
 

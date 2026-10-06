@@ -5,19 +5,19 @@ usage() {
     cat <<'EOF'
 Kullanım: ./install.sh [seçenekler]
 
-  (seçeneksiz)        Tema + dotfile'lar + UFW + NVIDIA saat ayarı + varsayılan terminal (eksik bağımlılıklar otomatik kurulur)
+  (seçeneksiz)        Tema + dotfile'lar + scripts + UFW + NVIDIA saat ayarı + varsayılan terminal (eksik bağımlılıklar otomatik kurulur)
   --apps              install_apps.sh'taki uygulamaları da aynı seferde kur
   --only a,b          Sadece verilen adımları çalıştır
   --skip a,b          Verilen adımları atla
   --no-restart        Sonda KWin/Plasma'yı yeniden yükleme
   -h, --help          Bu yardımı göster
 
-Adımlar: deps kwin colors kvantum decoration panel dotfiles ufw nvidia terminal
+Adımlar: deps kwin colors kvantum decoration panel dotfiles scripts ufw nvidia terminal
 Örnek:   ./install.sh --only ufw      ./install.sh --apps --skip panel
 EOF
 }
 
-ALL_STEPS=(deps kwin colors kvantum decoration panel dotfiles ufw nvidia terminal)
+ALL_STEPS=(deps kwin colors kvantum decoration panel dotfiles scripts ufw nvidia terminal)
 ONLY="" SKIP="" WITH_APPS=0 RESTART=1
 while (( $# )); do
     case $1 in
@@ -53,6 +53,7 @@ echo "============================================"
 CONFIG_DIR="$HOME/.config"
 BACKUP_DIR="$HOME/.config_backup_$(date +%Y%m%d_%H%M%S)"
 REPO_URL="https://github.com/thebanri/Config.git"
+SCRIPTS_URL="https://github.com/thebanri/scripts.git"
 TMP_DIR="" SUDO_PID=""
 trap '[[ -n $SUDO_PID ]] && kill "$SUDO_PID" 2>/dev/null; [[ -n $TMP_DIR ]] && rm -rf "$TMP_DIR"; true' EXIT
 
@@ -192,6 +193,19 @@ do_dotfiles() {
         systemctl --user enable nvibrant.service &>/dev/null && ok "nvibrant servisi açık."
     else
         warn "nvibrant ~/.local/bin altında yok, nvibrant.service açılmadı."
+    fi
+}
+
+do_scripts() {
+    step "Fish script'leri (~/scripts) kuruluyor..."
+    # config.fish, ~/scripts'i fish_function_path'e ekliyor (dotfiles adımı)
+    local dir="$HOME/scripts"
+    if [[ -d $dir/.git ]]; then
+        git -C "$dir" pull -q --ff-only && ok "~/scripts güncellendi." || warn "~/scripts güncellenemedi (yerel değişiklik olabilir)."
+    elif [[ -e $dir ]]; then
+        warn "~/scripts var ama git reposu değil, atlanıyor."
+    else
+        git clone -q "$SCRIPTS_URL" "$dir" && ok "$SCRIPTS_URL -> ~/scripts"
     fi
 }
 
