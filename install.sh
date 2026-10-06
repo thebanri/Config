@@ -5,19 +5,19 @@ usage() {
     cat <<'EOF'
 Kullanım: ./install.sh [seçenekler]
 
-  (seçeneksiz)        Tema + UFW + NVIDIA saat ayarı (eksik bağımlılıklar otomatik kurulur)
+  (seçeneksiz)        Tema + UFW + NVIDIA saat ayarı + varsayılan terminal (eksik bağımlılıklar otomatik kurulur)
   --apps              install_apps.sh'taki uygulamaları da aynı seferde kur
   --only a,b          Sadece verilen adımları çalıştır
   --skip a,b          Verilen adımları atla
   --no-restart        Sonda KWin/Plasma'yı yeniden yükleme
   -h, --help          Bu yardımı göster
 
-Adımlar: deps kwin colors kvantum decoration panel ufw nvidia
+Adımlar: deps kwin colors kvantum decoration panel ufw nvidia terminal
 Örnek:   ./install.sh --only ufw      ./install.sh --apps --skip panel
 EOF
 }
 
-ALL_STEPS=(deps kwin colors kvantum decoration panel ufw nvidia)
+ALL_STEPS=(deps kwin colors kvantum decoration panel ufw nvidia terminal)
 ONLY="" SKIP="" WITH_APPS=0 RESTART=1
 while (( $# )); do
     case $1 in
@@ -87,7 +87,7 @@ backup() {
 
 do_deps() {
     step "Bağımlılıklar kuruluyor..."
-    local pkgs=(kvantum ufw kwin-decoration-sierra-breeze-enhanced-git plasma6-applets-panel-colorizer)
+    local pkgs=(kvantum ufw kwin-decoration-sierra-breeze-enhanced-git plasma6-applets-panel-colorizer xdg-terminal-exec)
     if (( WITH_APPS )); then
         # install_apps.sh'taki listeyi al, tek pakman/AUR çağrısında hepsini kur
         local PACKAGES=()
@@ -210,6 +210,16 @@ do_nvidia() {
     sudo systemctl enable nvidia-persistenced.service nvidia-clocks.service &>/dev/null
     sudo systemctl restart nvidia-persistenced.service nvidia-clocks.service
     ok "Çekirdek 600-2100 MHz, bellek min 810 MHz (P5 altına inmez), persistence açık."
+}
+
+do_terminal() {
+    step "Varsayılan terminal ayarlanıyor..."
+    # Terminal=true olan .desktop uygulamaları (ör. cachy-update tray) GLib üzerinden açılır.
+    # GLib KDE'nin terminal ayarına bakmaz, önce xdg-terminal-exec'i dener; tercih bu dosyadan okunur.
+    backup "$CONFIG_DIR/kde-xdg-terminals.list"
+    cp "$SRC/Terminal/kde-xdg-terminals.list" "$CONFIG_DIR/"
+    command -v xdg-terminal-exec &>/dev/null || warn "xdg-terminal-exec kurulu değil, 'deps' adımını çalıştır."
+    ok "Terminal tercihi: $(head -n1 "$SRC/Terminal/kde-xdg-terminals.list")"
 }
 
 do_restart() {

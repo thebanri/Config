@@ -6,13 +6,13 @@ Bu kodu çalıştırın:
 
 `cd Config && chmod +x install.sh && ./install.sh`
 
-Script eksik bağımlılıkları (Kvantum, Sierra Breeze Enhanced, Panel Colorizer, UFW) tek seferde kurar, NVIDIA saat ayarını systemd servisi olarak yükler, sudo şifresini en başta bir kez sorar ve üzerine yazdığı ayarları `~/.config_backup_<tarih>` klasörüne yedekler.
+Script eksik bağımlılıkları (Kvantum, Sierra Breeze Enhanced, Panel Colorizer, UFW, xdg-terminal-exec) tek seferde kurar, NVIDIA saat ayarını systemd servisi olarak yükler, sudo şifresini en başta bir kez sorar ve üzerine yazdığı ayarları `~/.config_backup_<tarih>` klasörüne yedekler.
 
 | Komut | Ne yapar |
 |---|---|
-| `./install.sh` | Tema + UFW + NVIDIA saat ayarı |
+| `./install.sh` | Tema + UFW + NVIDIA saat ayarı + varsayılan terminal |
 | `./install.sh --apps` | `install_apps.sh`'taki uygulamaları da aynı seferde kurar |
-| `./install.sh --only ufw` | Sadece seçilen adımlar (`deps kwin colors kvantum decoration panel ufw nvidia`) |
+| `./install.sh --only ufw` | Sadece seçilen adımlar (`deps kwin colors kvantum decoration panel ufw nvidia terminal`) |
 | `./install.sh --skip panel` | Seçilen adımları atlar |
 | `./install.sh --no-restart` | Sonda KWin/Plasma'yı yeniden yüklemez |
 
@@ -29,6 +29,14 @@ Script eksik bağımlılıkları (Kvantum, Sierra Breeze Enhanced, Panel Coloriz
 - Bellek saati en az 810 MHz (`-lmc 810,7501`), böylece kart boşta P5'in altına inmez
 
 Değerler **RTX 3060** içindir; script başka kartta bu adımı atlar. Değerleri değiştirmek için servis dosyasını düzenleyip `./install.sh --only nvidia` çalıştırın. Kaldırmak için: `sudo systemctl disable --now nvidia-clocks`.
+
+### Terminal
+
+`Terminal/kde-xdg-terminals.list`, `~/.config/` altına kopyalanır ve `xdg-terminal-exec` kurulur. Varsayılan terminal **Alacritty**.
+
+Neden gerekli: `Terminal=true` olan uygulamalar (ör. cachy-update tray ikonu) terminali GLib üzerinden açar. GLib, KDE'deki varsayılan terminal ayarına bakmaz. Önce `xdg-terminal-exec`'i dener, o yoksa sabit bir listeden seçer (gnome-terminal, konsole, xterm...). Alacritty ve kitty bu listede yok, bu yüzden Konsole silinince bu uygulamalar *"Unable to find terminal required for application"* hatasıyla açılmaz.
+
+Terminali değiştirmek için dosyaya başka bir `.desktop` adı yazıp (ör. `kitty.desktop`) `./install.sh --only terminal` çalıştırın.
 
 
 ## Manual
