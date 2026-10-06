@@ -1,0 +1,17 @@
+[General]
+count=1
+rules=betternotes-stickies
+
+[betternotes-stickies]
+Description=BetterNotes Sticky Notes (Skip Taskbar)
+skippager=true
+skippagerrule=2
+skipswitcher=true
+skipswitcherrule=2
+skiptaskbar=true
+skiptaskbarrule=2
+types=512
+typesrule=2
+wmclass=betternotes
+wmclasscomplete=false
+wmclassmatch=1

@@ -5,19 +5,19 @@ usage() {
     cat <<'EOF'
 Kullanım: ./install.sh [seçenekler]
 
-  (seçeneksiz)        Tema + UFW + NVIDIA saat ayarı + varsayılan terminal (eksik bağımlılıklar otomatik kurulur)
+  (seçeneksiz)        Tema + dotfile'lar + UFW + NVIDIA saat ayarı + varsayılan terminal (eksik bağımlılıklar otomatik kurulur)
   --apps              install_apps.sh'taki uygulamaları da aynı seferde kur
   --only a,b          Sadece verilen adımları çalıştır
   --skip a,b          Verilen adımları atla
   --no-restart        Sonda KWin/Plasma'yı yeniden yükleme
   -h, --help          Bu yardımı göster
 
-Adımlar: deps kwin colors kvantum decoration panel ufw nvidia terminal
+Adımlar: deps kwin colors kvantum decoration panel dotfiles ufw nvidia terminal
 Örnek:   ./install.sh --only ufw      ./install.sh --apps --skip panel
 EOF
 }
 
-ALL_STEPS=(deps kwin colors kvantum decoration panel ufw nvidia terminal)
+ALL_STEPS=(deps kwin colors kvantum decoration panel dotfiles ufw nvidia terminal)
 ONLY="" SKIP="" WITH_APPS=0 RESTART=1
 while (( $# )); do
     case $1 in
@@ -169,6 +169,32 @@ do_panel() {
     ok "Preset hazır. Panel'e Panel Colorizer widget'ını ekleyip Panel_Conf'u seç."
 }
 
+do_dotfiles() {
+    step "Dotfile'lar kopyalanıyor..."
+    # Dotfiles/ klasörü $HOME'un aynısı: Dotfiles/.config/x -> ~/.config/x
+    # Farklı olan mevcut dosyalar yedek klasörüne aynı yolla yedeklenir (ör. micro ve zed'in settings.json'ı karışmaz).
+    local rel n=0
+    while IFS= read -r -d '' rel; do
+        rel=${rel#./}
+        cmp -s "$SRC/Dotfiles/$rel" "$HOME/$rel" && continue
+        if [[ -e $HOME/$rel ]]; then
+            mkdir -p "$BACKUP_DIR/home/$(dirname "$rel")"
+            cp -a "$HOME/$rel" "$BACKUP_DIR/home/$rel"
+        fi
+        install -D -m "$(stat -c %a "$SRC/Dotfiles/$rel")" "$SRC/Dotfiles/$rel" "$HOME/$rel"
+        n=$((n + 1))
+    done < <(cd "$SRC/Dotfiles" && find . -type f -print0)
+    ok "$n dosya güncellendi (aynı olanlar atlandı)."
+
+    systemctl --user daemon-reload
+    systemctl --user enable clocksource-watch.service &>/dev/null && ok "clocksource-watch servisi açık."
+    if [[ -x $HOME/.local/bin/nvibrant ]]; then
+        systemctl --user enable nvibrant.service &>/dev/null && ok "nvibrant servisi açık."
+    else
+        warn "nvibrant ~/.local/bin altında yok, nvibrant.service açılmadı."
+    fi
+}
+
 do_ufw() {
     step "UFW kuralları uygulanıyor..."
     if ! command -v ufw &>/dev/null; then
@@ -219,6 +245,8 @@ do_terminal() {
     backup "$CONFIG_DIR/kde-xdg-terminals.list"
     cp "$SRC/Terminal/kde-xdg-terminals.list" "$CONFIG_DIR/"
     command -v xdg-terminal-exec &>/dev/null || warn "xdg-terminal-exec kurulu değil, 'deps' adımını çalıştır."
+    # Ctrl+Alt+T kısayolu Alacritty'yi açsın (oturum yeniden açılınca geçerli olur)
+    kwriteconfig6 --file kglobalshortcutsrc --group services --group Alacritty.desktop --key _launch "Ctrl+Alt+T"
     ok "Terminal tercihi: $(head -n1 "$SRC/Terminal/kde-xdg-terminals.list")"
 }
 

@@ -1,0 +1,18 @@
+[Added Associations]
+x-scheme-handler/http=zen.desktop;
+x-scheme-handler/https=zen.desktop;
+x-scheme-handler/mailto=userapp-Thunderbird-ZLM3V3.desktop;
+x-scheme-handler/mid=userapp-Thunderbird-ZLM3V3.desktop;
+message/rfc822=userapp-Thunderbird-ZLM3V3.desktop;
+x-scheme-handler/net.thunderbird=userapp-Thunderbird-CR7GW3.desktop;
+
+[Default Applications]
+x-scheme-handler/claude-cli=claude-code-url-handler.desktop
+x-scheme-handler/http=zen.desktop;
+x-scheme-handler/https=zen.desktop;
+x-scheme-handler/mailto=userapp-Thunderbird-ZLM3V3.desktop
+x-scheme-handler/mid=userapp-Thunderbird-ZLM3V3.desktop
+message/rfc822=userapp-Thunderbird-ZLM3V3.desktop
+x-scheme-handler/net.thunderbird=userapp-Thunderbird-CR7GW3.desktop
+x-scheme-handler/limoni=limoni-voice.desktop
+x-scheme-handler/simplenote=simplenote.desktop

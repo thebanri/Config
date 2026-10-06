@@ -1,0 +1,13 @@
+[Unit]
+Description=NVIDIA digital vibrance (nvibrant)
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=oneshot
+# Sıra: bağlantı noktası indeksleri 0 1 2(HDMI monitör) 3(DP monitör). Aralık -1024..1023, 0 = varsayılan.
+ExecStart=%h/.local/bin/nvibrant 0 0 512 512
+RemainAfterExit=yes
+
+[Install]
+WantedBy=graphical-session.target

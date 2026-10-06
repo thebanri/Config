@@ -10,11 +10,46 @@ Script eksik bağımlılıkları (Kvantum, Sierra Breeze Enhanced, Panel Coloriz
 
 | Komut | Ne yapar |
 |---|---|
-| `./install.sh` | Tema + UFW + NVIDIA saat ayarı + varsayılan terminal |
+| `./install.sh` | Tema + dotfile'lar + UFW + NVIDIA saat ayarı + varsayılan terminal |
 | `./install.sh --apps` | `install_apps.sh`'taki uygulamaları da aynı seferde kurar |
-| `./install.sh --only ufw` | Sadece seçilen adımlar (`deps kwin colors kvantum decoration panel ufw nvidia terminal`) |
+| `./install.sh --only ufw` | Sadece seçilen adımlar (`deps kwin colors kvantum decoration panel dotfiles ufw nvidia terminal`) |
 | `./install.sh --skip panel` | Seçilen adımları atlar |
 | `./install.sh --no-restart` | Sonda KWin/Plasma'yı yeniden yüklemez |
+
+### Dotfile'lar
+
+`Dotfiles/` klasörü `$HOME`'un aynısıdır: `Dotfiles/.config/alacritty/alacritty.toml` → `~/.config/alacritty/alacritty.toml`. Sadece farklı olan dosyalar kopyalanır, eskileri `~/.config_backup_<tarih>/home/` altına aynı yolla yedeklenir.
+
+| Dosya | Ne |
+|---|---|
+| `alacritty/` | Terminal ayarı + temalar (Tokyo Night Storm) |
+| `kitty/kitty.conf` | kitty ayarı |
+| `micro/` | Editör ayarı + Catppuccin renk şemaları |
+| `fish/` | `config.fish`, Go/zoxide ayarı (`conf.d/dev-tools.fish`), `plasma-reset` fonksiyonu |
+| `btop/`, `fastfetch/` | Sistem izleme ve açılış logosu |
+| `fontconfig/fonts.conf` | Font yumuşatma / hinting |
+| `zed/settings.json` | Zed editör ayarı |
+| `git/ignore` | Global gitignore |
+| `kwinrulesrc` | Pencere kuralı: BetterNotes görev çubuğunda görünmesin |
+| `mimeapps.list` | Varsayılan uygulamalar (tarayıcı: Zen, posta: Thunderbird) |
+| `autostart/betternotes.desktop` | BetterNotes açılışta başlasın |
+| `systemd/user/` + `.local/bin/clocksource-watch` | Saat kaynağı uyarı servisi, NVIDIA renk canlılığı (nvibrant) |
+
+Sistemdeki değişiklikleri repoya almak için `./sync_dotfiles.sh` çalıştırıp `git diff` ile kontrol edin. Yeni bir dosyayı takibe almak için önce `Dotfiles/` altına aynı yolla kopyalayın.
+
+> Repo herkese açık: `gh/hosts.yml`, `.aws/`, tarayıcı profilleri, `kwalletrc`, `kdeconnect/` gibi token/anahtar içeren dosyaları **eklemeyin**.
+
+### Görev çubuğu önizlemeleri kaybolursa
+
+Önizlemelerde pencere yerine sadece ikon çıkıyorsa terminalde `plasma-reset` çalıştırın (panel birkaç saniye kaybolup geri gelir, açık pencereler etkilenmez).
+
+Nedeni: kpipewire bir görüntüyü GPU'ya aktaramazsa o formatı oturum boyunca listeden çıkarıyor. KWin sadece BGRA/BGRx sunduğu için ortak format kalmıyor (journal'da `no more input formats`). Ayrıntılı log için `~/.config/QtProject/qtlogging.ini` dosyasına şunu ekleyin:
+
+```ini
+[Rules]
+kpipewire_logging.debug=true
+kpipewire_dmabuf_logging.debug=true
+```
 
 ### UFW
 

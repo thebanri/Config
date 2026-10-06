@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=BetterNotes
+GenericName=Sticky Notes
+Comment=Lightweight desktop sticky notes and workspace
+Exec="/home/thebanri/.local/opt/betternotes/BetterNotes-x86_64.AppImage" --background
+Icon=org.betternotes.BetterNotes
+Terminal=false
+Categories=Utility;
+X-GNOME-Autostart-enabled=true
