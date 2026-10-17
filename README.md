@@ -77,7 +77,7 @@ Değerler **RTX 3060** içindir; script başka kartta bu adımı atlar. Değerle
 
 [zapret](https://github.com/bol-van/zapret) DPI engelini aşar (Discord vb.). Kurulu değilse `~/Downloads/zapret`'e klonlanıp derlenir ve `/opt/zapret`'e kopyalanır; sonra `Zapret/config` ve `Zapret/zapret-hosts-user.txt` yerine konur, `zapret.service` açılır.
 
-- Sadece listedeki sitelere (ve alt alan adlarına) dokunur, diğer trafik etkilenmez.
+- Listedeki sitelere (ve alt alan adlarına) dokunur. `autohostlist` açık: engellendiği anlaşılan siteler (60 sn içinde 3 başarısız deneme) `/opt/zapret/ipset/zapret-hosts-auto.txt`e kendiliğinden eklenir. Yanlış eklenen satır o dosyadan elle silinir.
 - TCP 443: `fake,multidisorder --dpi-desync-split-pos=2 --dpi-desync-ttl=3`. Değerler `blockcheck.sh` ile discord.com için bulundu; operatör değişirse `blockcheck.sh` yeniden çalıştırılıp `Zapret/config`'teki `NFQWS_OPT` güncellenmeli.
 - UDP 50000-65535: Discord sesli sohbet (`--filter-l7=discord,stun`).
 
