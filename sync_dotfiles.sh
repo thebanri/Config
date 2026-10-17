@@ -15,4 +15,19 @@ while IFS= read -r -d '' rel; do
         changed=$((changed + 1))
     fi
 done < <(find . -type f -print0 | sort -z)
+
+# Dotfiles dışındaki sistem ayarları: sistemdeki yol -> repodaki yol
+while read -r sys rel; do
+    if [[ ! -e $sys ]]; then
+        echo "  ! sistemde yok: $sys"
+    elif ! cmp -s "$sys" "../$rel"; then
+        cp "$sys" "../$rel"
+        echo "  ✓ güncellendi: $sys"
+        changed=$((changed + 1))
+    fi
+done <<'EOF'
+/opt/zapret/config Zapret/config
+/opt/zapret/ipset/zapret-hosts-user.txt Zapret/zapret-hosts-user.txt
+/etc/systemd/resolved.conf.d/dot.conf DNS/cloudflare.conf
+EOF
 echo "$changed dosya güncellendi. Kontrol: git diff"

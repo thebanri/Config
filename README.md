@@ -6,13 +6,13 @@ Bu kodu çalıştırın:
 
 `cd Config && chmod +x install.sh && ./install.sh`
 
-Script eksik bağımlılıkları (Kvantum, Sierra Breeze Enhanced, Panel Colorizer, UFW, xdg-terminal-exec) tek seferde kurar, NVIDIA saat ayarını systemd servisi olarak yükler, sudo şifresini en başta bir kez sorar ve üzerine yazdığı ayarları `~/.config_backup_<tarih>` klasörüne yedekler.
+Script eksik bağımlılıkları (Kvantum, Sierra Breeze Enhanced, Panel Colorizer, UFW, xdg-terminal-exec, libnetfilter_queue) tek seferde kurar, NVIDIA saat ayarını ve zapret'i systemd servisi olarak yükler, sudo şifresini en başta bir kez sorar ve üzerine yazdığı ayarları `~/.config_backup_<tarih>` klasörüne yedekler.
 
 | Komut | Ne yapar |
 |---|---|
-| `./install.sh` | Tema + dotfile'lar + scripts + UFW + NVIDIA saat ayarı + varsayılan terminal |
+| `./install.sh` | Tema + dotfile'lar + scripts + UFW + NVIDIA saat ayarı + varsayılan terminal + Cloudflare DNS + zapret |
 | `./install.sh --apps` | `install_apps.sh`'taki uygulamaları da aynı seferde kurar |
-| `./install.sh --only ufw` | Sadece seçilen adımlar (`deps kwin colors kvantum decoration panel dotfiles scripts ufw nvidia terminal`) |
+| `./install.sh --only ufw` | Sadece seçilen adımlar (`deps kwin colors kvantum decoration panel dotfiles scripts ufw nvidia terminal dns zapret`) |
 | `./install.sh --skip panel` | Seçilen adımları atlar |
 | `./install.sh --no-restart` | Sonda KWin/Plasma'yı yeniden yüklemez |
 
@@ -25,7 +25,7 @@ Script eksik bağımlılıkları (Kvantum, Sierra Breeze Enhanced, Panel Coloriz
 | `alacritty/` | Terminal ayarı + temalar (Tokyo Night Storm) |
 | `kitty/kitty.conf` | kitty ayarı |
 | `micro/` | Editör ayarı + Catppuccin renk şemaları |
-| `fish/` | `config.fish`, Go/zoxide ayarı (`conf.d/dev-tools.fish`), `plasma-reset` fonksiyonu |
+| `fish/` | `config.fish`, Go/zoxide ayarı (`conf.d/dev-tools.fish`), `plasma-reset`, `zapret-on` / `zapret-off` fonksiyonları |
 | `btop/`, `fastfetch/` | Sistem izleme ve açılış logosu |
 | `fontconfig/fonts.conf` | Font yumuşatma / hinting |
 | `zed/settings.json` | Zed editör ayarı |
@@ -35,7 +35,7 @@ Script eksik bağımlılıkları (Kvantum, Sierra Breeze Enhanced, Panel Coloriz
 | `autostart/betternotes.desktop` | BetterNotes açılışta başlasın |
 | `systemd/user/` + `.local/bin/clocksource-watch` | Saat kaynağı uyarı servisi, NVIDIA renk canlılığı (nvibrant) |
 
-Sistemdeki değişiklikleri repoya almak için `./sync_dotfiles.sh` çalıştırıp `git diff` ile kontrol edin. Yeni bir dosyayı takibe almak için önce `Dotfiles/` altına aynı yolla kopyalayın.
+Sistemdeki değişiklikleri (zapret ve DNS ayarları dahil) repoya almak için `./sync_dotfiles.sh` çalıştırıp `git diff` ile kontrol edin. Yeni bir dosyayı takibe almak için önce `Dotfiles/` altına aynı yolla kopyalayın.
 
 > Repo herkese açık: `gh/hosts.yml`, `.aws/`, tarayıcı profilleri, `kwalletrc`, `kdeconnect/` gibi token/anahtar içeren dosyaları **eklemeyin**.
 
@@ -68,6 +68,23 @@ kpipewire_dmabuf_logging.debug=true
 - Bellek saati en az 810 MHz (`-lmc 810,7501`), böylece kart boşta P5'in altına inmez
 
 Değerler **RTX 3060** içindir; script başka kartta bu adımı atlar. Değerleri değiştirmek için servis dosyasını düzenleyip `./install.sh --only nvidia` çalıştırın. Kaldırmak için: `sudo systemctl disable --now nvidia-clocks`.
+
+### DNS
+
+`DNS/cloudflare.conf`, `/etc/systemd/resolved.conf.d/dot.conf` olarak kurulur: DNS Cloudflare (`1.1.1.1`, `1.0.0.1` + IPv6), DNS-over-TLS açık, tüm sorgular ağın verdiği DNS'e değil bu sunuculara gider (`Domains=~.`). Sadece bu adım için: `./install.sh --only dns`.
+
+### Zapret
+
+[zapret](https://github.com/bol-van/zapret) DPI engelini aşar (Discord vb.). Kurulu değilse `~/Downloads/zapret`'e klonlanıp derlenir ve `/opt/zapret`'e kopyalanır; sonra `Zapret/config` ve `Zapret/zapret-hosts-user.txt` yerine konur, `zapret.service` açılır.
+
+- Sadece listedeki sitelere (ve alt alan adlarına) dokunur, diğer trafik etkilenmez.
+- TCP 443: `fake,multidisorder --dpi-desync-split-pos=2 --dpi-desync-ttl=3`. Değerler `blockcheck.sh` ile discord.com için bulundu; operatör değişirse `blockcheck.sh` yeniden çalıştırılıp `Zapret/config`'teki `NFQWS_OPT` güncellenmeli.
+- UDP 50000-65535: Discord sesli sohbet (`--filter-l7=discord,stun`).
+
+| Komut | Ne yapar |
+|---|---|
+| `zapret-on` / `zapret-off` | Servisi açar/kapatır, açılışta başlama durumu da buna göre değişir |
+| `zapret-add <site>...` | Siteyi listeye ekler ve buraya kaydeder ([scripts](https://github.com/thebanri/scripts) reposunda) |
 
 ### Terminal
 

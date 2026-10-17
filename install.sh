@@ -5,19 +5,19 @@ usage() {
     cat <<'EOF'
 Kullanım: ./install.sh [seçenekler]
 
-  (seçeneksiz)        Tema + dotfile'lar + scripts + UFW + NVIDIA saat ayarı + varsayılan terminal (eksik bağımlılıklar otomatik kurulur)
+  (seçeneksiz)        Tema + dotfile'lar + scripts + UFW + NVIDIA saat ayarı + varsayılan terminal + Cloudflare DNS + zapret (eksik bağımlılıklar otomatik kurulur)
   --apps              install_apps.sh'taki uygulamaları da aynı seferde kur
   --only a,b          Sadece verilen adımları çalıştır
   --skip a,b          Verilen adımları atla
   --no-restart        Sonda KWin/Plasma'yı yeniden yükleme
   -h, --help          Bu yardımı göster
 
-Adımlar: deps kwin colors kvantum decoration panel dotfiles scripts ufw nvidia terminal
+Adımlar: deps kwin colors kvantum decoration panel dotfiles scripts ufw nvidia terminal dns zapret
 Örnek:   ./install.sh --only ufw      ./install.sh --apps --skip panel
 EOF
 }
 
-ALL_STEPS=(deps kwin colors kvantum decoration panel dotfiles scripts ufw nvidia terminal)
+ALL_STEPS=(deps kwin colors kvantum decoration panel dotfiles scripts ufw nvidia terminal dns zapret)
 ONLY="" SKIP="" WITH_APPS=0 RESTART=1
 while (( $# )); do
     case $1 in
@@ -70,7 +70,7 @@ else
 fi
 
 # sudo şifresini en başta bir kez sor, kurulum boyunca canlı tut
-if wanted deps || wanted ufw || wanted nvidia || (( WITH_APPS )); then
+if wanted deps || wanted ufw || wanted nvidia || wanted dns || wanted zapret || (( WITH_APPS )); then
     sudo -v
     while true; do sudo -n true; sleep 50; done 2>/dev/null &
     SUDO_PID=$!
@@ -88,7 +88,7 @@ backup() {
 
 do_deps() {
     step "Bağımlılıklar kuruluyor..."
-    local pkgs=(kvantum ufw kwin-decoration-sierra-breeze-enhanced-git plasma6-applets-panel-colorizer xdg-terminal-exec)
+    local pkgs=(kvantum ufw kwin-decoration-sierra-breeze-enhanced-git plasma6-applets-panel-colorizer xdg-terminal-exec libnetfilter_queue)
     if (( WITH_APPS )); then
         # install_apps.sh'taki listeyi al, tek pakman/AUR çağrısında hepsini kur
         local PACKAGES=()
@@ -262,6 +262,39 @@ do_terminal() {
     # Ctrl+Alt+T kısayolu Alacritty'yi açsın (oturum yeniden açılınca geçerli olur)
     kwriteconfig6 --file kglobalshortcutsrc --group services --group Alacritty.desktop --key _launch "Ctrl+Alt+T"
     ok "Terminal tercihi: $(head -n1 "$SRC/Terminal/kde-xdg-terminals.list")"
+}
+
+do_dns() {
+    step "DNS Cloudflare yapılıyor (DNS-over-TLS)..."
+    if ! systemctl is-active -q systemd-resolved.service; then
+        warn "systemd-resolved çalışmıyor, atlanıyor."
+        return
+    fi
+    sudo install -Dm 644 "$SRC/DNS/cloudflare.conf" /etc/systemd/resolved.conf.d/dot.conf
+    sudo systemctl restart systemd-resolved.service
+    [[ $(readlink /etc/resolv.conf) == */systemd/resolve/stub-resolv.conf ]] ||
+        warn "/etc/resolv.conf resolved'a bağlı değil: sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf"
+    ok "1.1.1.1 / 1.0.0.1, tüm sorgular şifreli."
+}
+
+do_zapret() {
+    step "zapret kuruluyor (Discord vb. DPI engelini aşar)..."
+    if [[ ! -x /opt/zapret/nfq/nfqws ]]; then
+        local src="$HOME/Downloads/zapret"
+        [[ -d $src/.git ]] || git clone -q --depth 1 https://github.com/bol-van/zapret.git "$src"
+        make -C "$src" >/dev/null
+        sudo mkdir -p /opt/zapret
+        sudo cp -a "$src/." /opt/zapret/
+        sudo chown -R root:root /opt/zapret
+        ok "Derlendi, /opt/zapret'e kopyalandı."
+    fi
+    sudo install -m 644 "$SRC/Zapret/config" /opt/zapret/config
+    sudo install -m 644 "$SRC/Zapret/zapret-hosts-user.txt" /opt/zapret/ipset/zapret-hosts-user.txt
+    sudo install -m 644 /opt/zapret/init.d/systemd/zapret.service /etc/systemd/system/zapret.service
+    sudo systemctl daemon-reload
+    sudo systemctl enable zapret.service &>/dev/null
+    sudo systemctl restart zapret.service
+    ok "zapret açık ($(wc -l < "$SRC/Zapret/zapret-hosts-user.txt") site). Aç/kapa: zapret-on / zapret-off"
 }
 
 do_restart() {
